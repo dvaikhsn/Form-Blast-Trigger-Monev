@@ -353,7 +353,7 @@ export default function MonevForm() {
             </label>
             <input 
               type="text" 
-              placeholder="https://deeper-appliance-tattoo-tomato.trycloudflare.com/webhook-test/snt-monev" 
+              placeholder="https://deeper-appliance-tattoo-tomato.trycloudflare.com/webhook/snt-monev" 
               className="w-full px-3 py-2 text-sm rounded border border-slate-300 mb-2"
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
