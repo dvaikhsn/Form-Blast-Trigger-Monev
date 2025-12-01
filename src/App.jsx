@@ -1,9 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Send, MapPin, Calendar, User, Mail, Phone, Info, Settings, AlertCircle, CheckCircle, Search } from 'lucide-react';
 
-// --- PERUBAHAN 1: Pastikan file gambar bisa diakses ---
-// Dalam environment React/Vite/Next.js standar, biasanya file statis ditaruh di folder 'public'.
-// Untuk contoh ini, kita asumsikan path-nya langsung menunjuk ke file tersebut.
 const LOGO_SNT = "snt.png";
 
 // Daftar Nama Kota (Raw Data)
