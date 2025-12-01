@@ -113,8 +113,8 @@ export default function MonevForm() {
         <div className="inline-flex items-center justify-center p-3 bg-blue-600 rounded-full shadow-lg mb-4">
           <Server className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900">Form Monev Lapangan</h1>
-        <p className="text-slate-500 text-sm mt-1">Monitoring Evaluasi Reference Terminal & Gateway</p>
+        <h1 className="text-2xl font-bold text-slate-900">Form Monitoring Evaluasi Reference Terminal</h1>
+        <p className="text-slate-500 text-sm mt-1">Monitoring Evaluasi Reference Terminal</p>
       </div>
 
       <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
@@ -282,7 +282,7 @@ export default function MonevForm() {
           onClick={() => setShowSettings(!showSettings)}
           className="flex items-center gap-2 text-slate-400 text-sm hover:text-slate-600 transition-colors mx-auto"
         >
-          <Settings className="w-4 h-4" /> Konfigurasi n8n Webhook
+          <Settings className="w-4 h-4" /> SNT Operational 
         </button>
         
         {showSettings && (
