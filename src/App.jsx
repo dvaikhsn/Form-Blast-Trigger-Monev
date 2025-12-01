@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { Send, MapPin, Calendar, User, Mail, Phone, Info, Settings, AlertCircle, CheckCircle, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { Send, MapPin, Calendar, User, Mail, Phone, Info, Settings, AlertCircle, CheckCircle, Search, Server, Radio } from 'lucide-react';
 
 const LOGO_SNT = "snt.png";
 
-// Daftar Nama Kota (Raw Data)
-const RAW_CITIES = [
+// --- DATA 1: MONEV RT (DATA LAMA) ---
+const RAW_RT_CITIES = [
   "Agats", "Ambon", "Bacan", "Balikpapan", "Banda Aceh", "Bandar Lampung", "Banggai", "Banjarbaru", 
   "Barru", "Batam", "Baubau", "Bengkulu", "Berau", "Bima", "Boven Digoel", "Bula", "Buleleng", 
   "Buli Serani", "Cikarang", "Cirebon", "Denpasar", "Dobo", "Dumai", "Falabisahaya", "Gunung Sitoli", 
@@ -19,16 +19,30 @@ const RAW_CITIES = [
   "Timika", "Tolitoli", "Tua", "Tuban", "Waingapu", "Wamena"
 ];
 
-// Generate Data Locations dari Raw Cities
-const LOCATIONS = [...new Set(RAW_CITIES)].sort().map((city, index) => ({
-  id: `LOC-${index + 1}`.padStart(7, '0'),
+const RT_LOCATIONS = [...new Set(RAW_RT_CITIES)].sort().map((city, index) => ({
+  id: `RT-${index + 1}`.padStart(7, '0'),
   name: city,
-  type: 'Site Monev',
-  notes: `Lakukan pengecekan rutin perangkat infrastruktur dan validasi log performa di lokasi ${city}. Pastikan dokumentasi foto lengkap.`
+  category: 'Reference Terminal',
+  notes: `Lakukan pengecekan rutin perangkat infrastruktur RT dan validasi log performa di lokasi ${city}. Pastikan dokumentasi foto lengkap.`
+}));
+
+// --- DATA 2: MONEV GATEWAY (DATA BARU) ---
+const RAW_GATEWAY_CITIES = [
+  "GW 01 Batam", "GW 02 Cikarang", "GW 07 Kupang", "GW 03 Pontianak", 
+  "GW 04 Banjarmasin", "GW 06 Manado", "GW 08 Ambon", "GW 09 Manokwari", 
+  "GW 10 Timika", "GW 11 Jayapura", "GW 05 Tarakan"
+];
+
+const GATEWAY_LOCATIONS = RAW_GATEWAY_CITIES.sort().map((gw, index) => ({
+  id: `GW-${index + 1}`.padStart(7, '0'),
+  name: gw,
+  category: 'Gateway',
+  notes: `Lakukan inspeksi menyeluruh pada perangkat Gateway utama di ${gw}. Cek parameter satelit, power, dan suhu ruangan server.`
 }));
 
 export default function MonevForm() {
   const [formData, setFormData] = useState({
+    monevType: 'RT', // Default: Reference Terminal
     name: '',
     date: new Date().toISOString().split('T')[0],
     locationId: '',
@@ -36,17 +50,30 @@ export default function MonevForm() {
     whatsapp: '',
   });
 
-  const [webhookUrl, setWebhookUrl] = useState('');
+  // State untuk webhook (Default URL yang kamu berikan)
+  const [webhookUrl, setWebhookUrl] = useState('https://deeper-appliance-tattoo-tomato.trycloudflare.com/webhook-test/snt-monev');
   const [showSettings, setShowSettings] = useState(false);
   const [status, setStatus] = useState('idle');
   const [selectedLocationDetails, setSelectedLocationDetails] = useState(null);
 
+  // Logic untuk menentukan list mana yang dipakai
+  const currentLocations = formData.monevType === 'RT' ? RT_LOCATIONS : GATEWAY_LOCATIONS;
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    setFormData(prev => {
+      // Jika user ganti tipe Monev, reset lokasi yang dipilih sebelumnya
+      if (name === 'monevType') {
+        setSelectedLocationDetails(null);
+        return { ...prev, [name]: value, locationId: '' };
+      }
+      return { ...prev, [name]: value };
+    });
 
     if (name === 'locationId') {
-      const loc = LOCATIONS.find(l => l.id === value);
+      // Cari lokasi di list yang sedang aktif
+      const loc = currentLocations.find(l => l.id === value);
       setSelectedLocationDetails(loc || null);
     }
   };
@@ -58,10 +85,10 @@ export default function MonevForm() {
     const payload = {
       ...formData,
       locationName: selectedLocationDetails?.name || 'Unknown',
-      locationType: selectedLocationDetails?.type || 'Unknown',
+      locationCategory: selectedLocationDetails?.category || 'Unknown', // RT atau Gateway
       notesSent: selectedLocationDetails?.notes || '',
       timestamp: new Date().toISOString(),
-      source: 'Web Form Monev'
+      source: 'Web Form Monev SNT'
     };
 
     console.log("Payload siap dikirim ke n8n:", payload);
@@ -90,6 +117,7 @@ export default function MonevForm() {
 
   const resetForm = () => {
     setFormData({
+      monevType: 'RT',
       name: '',
       date: new Date().toISOString().split('T')[0],
       locationId: '',
@@ -100,26 +128,20 @@ export default function MonevForm() {
     setStatus('idle');
   };
 
-  // --- PERUBAHAN WARNA DI TAILWIND ---
-  // Semua class 'blue' telah diganti dengan 'orange'
-
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 p-4 md:p-8">
       
       {/* Header dengan Logo SNT */}
       <div className="max-w-xl mx-auto mb-8 text-center">
-        {/* --- PERUBAHAN 2: Menampilkan Logo Image --- */}
         <div className="flex justify-center mb-6">
            <img 
              src={LOGO_SNT} 
              alt="SNT Logo" 
-             // Mengatur tinggi logo agar proporsional
              className="h-20 w-auto object-contain" 
            />
         </div>
-        {/* Ikon Server biru sebelumnya dihapus */}
-        <h1 className="text-2xl font-bold text-slate-900">Form Monitoring Evaluasi Reference Terminal</h1>
-        <p className="text-slate-500 text-sm mt-1">Monitoring Evaluasi Reference Terminal</p>
+        <h1 className="text-2xl font-bold text-slate-900">Form Monitoring Evaluasi</h1>
+        <p className="text-slate-500 text-sm mt-1">SNT Operational Report System</p>
       </div>
 
       <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
@@ -132,8 +154,7 @@ export default function MonevForm() {
             </div>
             <h2 className="text-xl font-bold text-slate-800 mb-2">Data Terkirim!</h2>
             <p className="text-slate-600 mb-6">
-              Laporan Monev untuk <strong>{selectedLocationDetails?.name}</strong> berhasil dicatat. 
-              <br/>Blast notifikasi akan segera dikirim ke WhatsApp & Email PIC.
+              Cek email untuk melihat Laporan <strong>Monev {formData.monevType === 'RT' ? 'RT' : 'Gateway'}</strong> untuk lokasi <strong>{selectedLocationDetails?.name}</strong>. 
             </p>
             <button 
               onClick={resetForm}
@@ -146,17 +167,49 @@ export default function MonevForm() {
           /* Form State */
           <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-5">
             
+            {/* 1. PILIH JENIS MONEV (Fitur Baru) */}
+            <div className="space-y-2 mb-2">
+               <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                 <Server className="w-4 h-4 text-orange-500" /> Pilih Jenis Monev
+               </label>
+               <div className="grid grid-cols-2 gap-3">
+                 <label className={`cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${formData.monevType === 'RT' ? 'bg-orange-50 border-orange-500 text-orange-700 font-bold' : 'border-slate-200 hover:bg-slate-50'}`}>
+                    <input 
+                      type="radio" 
+                      name="monevType" 
+                      value="RT" 
+                      checked={formData.monevType === 'RT'}
+                      onChange={handleInputChange}
+                      className="hidden"
+                    />
+                    <span>Monev RT</span>
+                 </label>
+                 
+                 <label className={`cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${formData.monevType === 'Gateway' ? 'bg-orange-50 border-orange-500 text-orange-700 font-bold' : 'border-slate-200 hover:bg-slate-50'}`}>
+                    <input 
+                      type="radio" 
+                      name="monevType" 
+                      value="Gateway" 
+                      checked={formData.monevType === 'Gateway'}
+                      onChange={handleInputChange}
+                      className="hidden"
+                    />
+                    <span>Monev Gateway</span>
+                 </label>
+               </div>
+            </div>
+
+            <hr className="border-slate-100" />
+
             {/* Nama */}
             <div className="space-y-1">
               <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                {/* Perubahan Warna Icon */}
                 <User className="w-4 h-4 text-orange-500" /> Nama PIC
               </label>
               <input 
                 type="text" 
                 name="name"
                 required
-                // Perubahan Warna Focus Ring & Border
                 className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                 placeholder="Nama Lengkap Anda"
                 value={formData.name}
@@ -168,14 +221,12 @@ export default function MonevForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  {/* Perubahan Warna Icon */}
                   <Calendar className="w-4 h-4 text-orange-500" /> Tanggal Kunjungan
                 </label>
                 <input 
                   type="date" 
                   name="date"
                   required
-                  // Perubahan Warna Focus Ring & Border
                   className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                   value={formData.date}
                   onChange={handleInputChange}
@@ -184,20 +235,23 @@ export default function MonevForm() {
 
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  {/* Perubahan Warna Icon */}
-                  <MapPin className="w-4 h-4 text-orange-500" /> Lokasi Monev
+                  <MapPin className="w-4 h-4 text-orange-500" /> Lokasi {formData.monevType}
                 </label>
                 <div className="relative">
                   <select 
                     name="locationId"
                     required
-                    // Perubahan Warna Focus Ring & Border
                     className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all appearance-none bg-white cursor-pointer"
                     value={formData.locationId}
                     onChange={handleInputChange}
                   >
-                    <option value="" disabled>Pilih Kota / Lokasi...</option>
-                    {LOCATIONS.map(loc => (
+                    {/* Placeholder dinamis */}
+                    <option value="" disabled>
+                        Pilih {formData.monevType === 'RT' ? 'Kota' : 'Gateway'}...
+                    </option>
+                    
+                    {/* Mapping data sesuai jenis yang dipilih */}
+                    {currentLocations.map(loc => (
                       <option key={loc.id} value={loc.id}>{loc.name}</option>
                     ))}
                   </select>
@@ -206,23 +260,20 @@ export default function MonevForm() {
                   </div>
                 </div>
                 <p className="text-xs text-slate-400 pl-1">
-                  *Total {LOCATIONS.length} lokasi tersedia (Urut Abjad)
+                  *Menampilkan daftar {formData.monevType === 'RT' ? 'Monev RT' : 'Monev Gateway'}
                 </p>
               </div>
             </div>
 
-            {/* Dynamic Briefing Note (Fitur Tambahan) - Perubahan Warna Tema Oranye */}
+            {/* Dynamic Briefing Note */}
             {selectedLocationDetails && (
               <div className="bg-orange-50 border border-orange-100 rounded-lg p-4 animate-in fade-in slide-in-from-top-2">
                 <h4 className="text-orange-800 font-semibold text-sm flex items-center gap-2 mb-1">
                   <Info className="w-4 h-4" />
-                  Briefing Awal: {selectedLocationDetails.name}
+                  Note: {selectedLocationDetails.name}
                 </h4>
                 <p className="text-orange-700 text-sm leading-relaxed">
                   "{selectedLocationDetails.notes}"
-                </p>
-                <p className="text-xs text-orange-500 mt-2 italic">
-                  *Detail lengkap & history akan dikirim ke WA/Email setelah submit.
                 </p>
               </div>
             )}
@@ -230,14 +281,12 @@ export default function MonevForm() {
             {/* Email */}
             <div className="space-y-1">
               <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                {/* Perubahan Warna Icon */}
                 <Mail className="w-4 h-4 text-orange-500" /> Email Perusahaan
               </label>
               <input 
                 type="email" 
                 name="email"
                 required
-                // Perubahan Warna Focus Ring & Border
                 className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                 placeholder="email@kantor.co.id"
                 value={formData.email}
@@ -248,23 +297,20 @@ export default function MonevForm() {
             {/* WhatsApp */}
             <div className="space-y-1">
               <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                {/* Perubahan Warna Icon */}
                 <Phone className="w-4 h-4 text-orange-500" /> Nomor WhatsApp
               </label>
               <input 
                 type="tel" 
                 name="whatsapp"
                 required
-                // Perubahan Warna Focus Ring & Border
                 className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                 placeholder="628123456789"
                 value={formData.whatsapp}
                 onChange={handleInputChange}
               />
-              <p className="text-xs text-slate-400 ml-1">Pastikan nomor aktif untuk menerima blast info Monev.</p>
             </div>
 
-            {/* Tombol Submit - Perubahan Warna Button */}
+            {/* Tombol Submit */}
             <button 
               type="submit" 
               disabled={status === 'submitting'}
@@ -313,7 +359,7 @@ export default function MonevForm() {
               onChange={(e) => setWebhookUrl(e.target.value)}
             />
             <p className="text-xs text-slate-500">
-              Biarkan kosong untuk mode simulasi. Jika diisi, form akan melakukan POST request ke URL ini dengan JSON body.
+              Default URL sudah di-set. Ubah jika perlu.
             </p>
           </div>
         )}
