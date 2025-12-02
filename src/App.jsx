@@ -51,7 +51,7 @@ export default function MonevForm() {
   });
 
   // State untuk webhook (Default URL yang kamu berikan)
-  const [webhookUrl, setWebhookUrl] = useState('https://deeper-appliance-tattoo-tomato.trycloudflare.com/webhook-test/snt-monev');
+  const [webhookUrl, setWebhookUrl] = useState('https://deeper-appliance-tattoo-tomato.trycloudflare.com/webhook/snt-monev');
   const [showSettings, setShowSettings] = useState(false);
   const [status, setStatus] = useState('idle');
   const [selectedLocationDetails, setSelectedLocationDetails] = useState(null);
